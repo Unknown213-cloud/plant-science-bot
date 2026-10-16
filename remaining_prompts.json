@@ -1,0 +1,44 @@
+[
+  {
+    "filename": "raw_brain_04.png",
+    "topic": "Human Brain",
+    "slide": "Slide 4 (Fact 3: Blood-Brain Barrier & Astrocytes)",
+    "prompt": "Cinematic 3D microscopic cutaway of a human cerebral capillary and the blood-brain barrier on a dark background. Star-shaped astrocyte glial cells wrapping glowing podocyte end-feet tightly around endothelial microvessel walls, protecting passing red blood cells while selectively transporting nutrients. Scientific cellular illustration, high-contrast bioluminescent lighting, 8k render, no text, no labels, no words, no annotations, no watermarks."
+  },
+  {
+    "filename": "raw_brain_05.png",
+    "topic": "Human Brain",
+    "slide": "Slide 5 (CTA: Connectome & Synaptic Plasticity)",
+    "prompt": "Cinematic 3D render of a dense neural network connectome on a deep dark background. Thousands of interconnected glowing neurons firing in synchronized harmony, brilliant flashes of cyan and lavender light racing along synaptic pathways, representing learning, memory, and cognitive plasticity. Cosmic biological visualization, Octane render, 8k resolution, no text, no letters, no labels, no diagrams, no watermarks."
+  },
+  {
+    "filename": "raw_lungs_01.png",
+    "topic": "Human Lungs",
+    "slide": "Slide 1 (Hero Hook: Bronchial Tree)",
+    "prompt": "Cinematic 3D render of the human respiratory bronchial tree suspended in dark space on a pure black background. Trachea branching into primary bronchi and thousands of delicate glowing cyan and aqua terminal bronchioles, forming an inverted biological glowing arbor with soft translucent pulmonary lobe contours. High-end medical Octane render, dramatic cool volumetric highlights, 8k resolution, clean visual with absolutely no text, no labels, no words, no diagrams, no watermarks."
+  },
+  {
+    "filename": "raw_lungs_02.png",
+    "topic": "Human Lungs",
+    "slide": "Slide 2 (Fact 1: Alveolar Clusters)",
+    "prompt": "Microscopic 3D cutaway of human pulmonary alveoli clustered like delicate translucent grapes on a deep dark background. Microscopic air sacs wrapped in a fine web of glowing capillaries with individual red blood cells visible through ultra-thin membranes, illuminated by soft aqua and crimson bioluminescent lighting. Medical biological visualization, photorealistic depth of field, 8k render, no text, no labels, no words, no arrows, no watermarks."
+  },
+  {
+    "filename": "raw_lungs_03.png",
+    "topic": "Human Lungs",
+    "slide": "Slide 3 (Fact 2: Blood-Air Diffusion Barrier)",
+    "prompt": "Nanoscale 3D scientific visualization of the human blood-air barrier cross-section on a dark black background. Type I alveolar epithelial cell sharing a microscopic basement membrane with capillary endothelium, oxygen molecules represented as glowing golden particles diffusing rapidly into hemoglobin molecules inside a red blood cell. High-precision physiology illustration, 8k resolution, no text, no labels, no words, no diagrams, no watermarks."
+  },
+  {
+    "filename": "raw_lungs_04.png",
+    "topic": "Human Lungs",
+    "slide": "Slide 4 (Fact 3: Type II Cells & Surfactant)",
+    "prompt": "Microscopic 3D cellular render of Type II alveolar cells (great alveolar cells) on a dark studio background. Cuboidal secretory cells releasing lamellar bodies containing dipalmitoylphosphatidylcholine (DPPC) surfactant, forming a glistening molecular protective layer over moist alveolar fluid to lower surface tension. Cellular biology aesthetic, dramatic edge lighting, 8k render, no text, no labels, no words, no annotations, no watermarks."
+  },
+  {
+    "filename": "raw_lungs_05.png",
+    "topic": "Human Lungs",
+    "slide": "Slide 5 (CTA: Thoracic Diaphragm Bellows)",
+    "prompt": "Cinematic 3D anatomical visualization of the human thoracic diaphragm muscle beneath the lungs on a deep dark background. Dome-shaped muscular sheet with central tendon contracting downward, expanding the ribcage cavity and generating negative pressure inhalation, glowing with delicate cyan and warm amber biomechanical tension lines. Medical physiology visualization, 8k Octane render, no text, no letters, no labels, no diagrams, no watermarks."
+  }
+]

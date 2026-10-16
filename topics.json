@@ -1,0 +1,21 @@
+[
+  {
+    "id": "20261016-how-carnivorous-plants-digest-live-prey",
+    "rank_number": 1,
+    "headline": "HOW CARNIVOROUS PLANTS DIGEST LIVE PREY",
+    "series": "Survival Biomechanics",
+    "type": "Evergreen",
+    "timely_reason": "High sustained Wikipedia pageviews on Dionaea muscipula and surging Reddit interest in nutrient-poor bog adaptations.",
+    "sources": [
+      "Wikipedia (Venus_flytrap)",
+      "Reddit (r/botany)"
+    ],
+    "facts": [
+      "Trigger hairs require two mechanical stimulations within 20 seconds to fire calcium ion action potentials.",
+      "Acid glands flood the sealed trap chamber with hydrochloric enzymes at a pH of 1.5–2.0.",
+      "Digestion extracts essential nitrogen and phosphorus, allowing survival in sterile, acidic peat bogs."
+    ],
+    "approved_at": "2026-10-16T10:43:07.519971+00:00",
+    "status": "approved"
+  }
+]

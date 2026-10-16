@@ -1,0 +1,21 @@
+name: Validate automation and queue
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - run: pip install -r requirements-publish.txt
+      - name: Run regression tests
+        run: python -m unittest discover -s tests -v
+      - name: Validate complete publishing queue
+        run: python post_next.py --validate-all

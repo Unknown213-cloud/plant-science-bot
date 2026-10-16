@@ -1,0 +1,116 @@
+# 🧬 20-Prompt Master Specification: Human Biology & Anatomy Batch
+
+Use this document to instruct any AI agent (Gemini, Midjourney, DALL-E 3, Stable Diffusion, Ideogram, etc.) to generate the 20 raw scientific images for our Instagram educational carousels.
+
+---
+
+## 🎨 Global Visual Guidelines (The Leaf DNA)
+To ensure maximum visual cohesion across all 4 carousels:
+- **Aspect Ratio**: `3:4` or `4:5` (minimum resolution: 1080×1350).
+- **Background**: Pure deep dark black background (`#04070a`), high-contrast dark luxury aesthetic.
+- **Style**: Cinematic 3D scientific visualization / Octane render / photorealistic cellular macro with shallow depth of field.
+- **Lighting**: Volumetric bioluminescent internal glow, dramatic rim lighting, translucent subsurface scattering.
+- **Strict Negative Constraints**: `NO text, NO letters, NO words, NO labels, NO pointer lines, NO diagrams, NO arrows, NO watermarks, NO split screens, NO frames`. All text and labels are added programmatically in code using Pillow.
+
+---
+
+## 📂 Target Output Folder
+Save the generated images directly to:
+```
+raw_batch/
+├── raw_eye_01.png ... raw_eye_05.png
+├── raw_heart_01.png ... raw_heart_05.png
+├── raw_brain_01.png ... raw_brain_05.png
+└── raw_lungs_01.png ... raw_lungs_05.png
+```
+
+---
+
+## Post 01: The Human Eye (`01-human-eye`)
+*Theme: Human Optics & Photoreception | Accent: Emerald & Amber (#2ed573)*
+
+### Slide 1 (Hero Hook) -> `raw_eye_01.png`
+> **Prompt**: `Cinematic 3D render macro close-up of a living human eye iris and pupil aperture on a pure dark black background. Hyper-detailed radial muscle fibers glowing with volumetric emerald green and warm amber bioluminescent light, deep crystalline dark pupil center, glossy translucent corneal curvature with soft specular studio rim lighting. Photorealistic depth of field, medical Octane render, 8k resolution, completely clean visual with absolutely no text, no labels, no words, no diagrams, no watermarks.`
+
+### Slide 2 (Fact 1: Dual Lenses) -> `raw_eye_02.png`
+> **Prompt**: `Cinematic 3D medical cross-section illustration of the anterior human eye showing the transparent cornea and crystalline lens on a deep dark background. Visible coherent light beams bending and refracting cleanly through the optical lens toward the focal center, transparent aqueous humor chamber, delicate ciliary muscle zonules, glowing cyan and soft white light refraction paths. High-end scientific biological visualization, clean Octane render, no text, no labels, no words, no diagrams, no watermarks.`
+
+### Slide 3 (Fact 2: Rods & Cones Mosaic) -> `raw_eye_03.png`
+> **Prompt**: `Microscopic 3D cellular visualization of the human retina photoreceptor mosaic on a pure dark studio background. Dense microscopic forest of cylindrical rod cells and conical cone photoreceptors, outer segments packed with photopigment membranous discs glowing with ethereal violet, cobalt blue, and golden bioluminescence, synaptic pedicle terminals. Scanning electron micrograph aesthetic, scientific depth of field, 8k resolution, no text, no labels, no words, no arrows, no watermarks.`
+
+### Slide 4 (Fact 3: Fovea Centralis HD Pit) -> `raw_eye_04.png`
+> **Prompt**: `Cinematic 3D microscopic cutaway of the human fovea centralis and macular center on a dark background. Ultra-dense specialized cone cells tightly packed in a curved anatomical pit, completely avascular zone devoid of capillary interference, radiant golden amber and soft emerald luminescence illuminating delicate cell membranes. Scientific medical animation aesthetic, photorealistic macro lighting, 8k render, no text, no labels, no words, no annotations, no watermarks.`
+
+### Slide 5 (CTA: Optic Nerve Cable) -> `raw_eye_05.png`
+> **Prompt**: `Cinematic 3D anatomical visualization of the posterior eyeball where the optic nerve exits on a deep black background. A dense bundle of over one million axon fibers bundled like glowing fiber-optic cables transmitting bioluminescent blue and golden action potential light pulses, retinal ganglion micro-veins. Dramatic cinematic backlighting, high-end medical science art, 8k resolution, no text, no letters, no labels, no diagrams, no watermarks.`
+
+---
+
+## Post 02: The Human Heart (`02-human-heart`)
+*Theme: Cardiovascular Biomechanics | Accent: Crimson & Rose Gold (#ff4757)*
+
+### Slide 1 (Hero Hook) -> `raw_heart_01.png`
+> **Prompt**: `Cinematic 3D render of the human heart suspended in anatomical orientation on a pure dark black background. Muscular ventricles and atria with hyper-detailed myocardial striations, aorta and pulmonary arteries arching upward with deep crimson and warm rose-gold bioluminescent internal glow, glossy visceral pericardium sheen under soft dramatic rim lighting. Medical Octane render, photorealistic depth of field, 8k resolution, clean visual with absolutely no text, no labels, no words, no diagrams, no watermarks.`
+
+### Slide 2 (Fact 1: SA Node Pacemaker) -> `raw_heart_02.png`
+> **Prompt**: `Cinematic 3D visualization of the human cardiac electrical conduction system inside the heart on a dark background. The sinoatrial (SA) node pacemaker and atrioventricular (AV) bundle branching into a glowing web of Purkinje fibers, electric yellow-gold and neon cyan action potential sparks traveling rapidly through myocardial tissue walls. High-end cardiology illustration, dramatic volumetric lighting, 8k render, no text, no labels, no words, no annotations, no watermarks.`
+
+### Slide 3 (Fact 2: Cardiac Valves) -> `raw_heart_03.png`
+> **Prompt**: `Macro 3D cutaway of human cardiac valves inside a ventricular chamber on a pure black background. Delicate, flexible collagenous valve cusps anchored by strong fibrous chordae tendineae (heart strings) and papillary muscles, illuminated by translucent cool white and crimson bioluminescent lighting under realistic fluid tension. Photorealistic biological biomechanics, crisp medical visualization, 8k resolution, no text, no labels, no words, no diagrams, no watermarks.`
+
+### Slide 4 (Fact 3: Coronary Capillary Tree) -> `raw_heart_04.png`
+> **Prompt**: `Cinematic 3D render of the human heart coronary microvascular network on a deep dark background. Left anterior descending and right coronary arteries branching into an intricate glowing tree of capillaries hugging the epicardium, pulsating with radiant ruby red and oxygenated crimson bioluminescent light. Hyper-detailed microvascular mapping, medical Octane visualization, 8k resolution, no text, no labels, no words, no arrows, no watermarks.`
+
+### Slide 5 (CTA: Cardiomyocytes & Intercalated Discs) -> `raw_heart_05.png`
+> **Prompt**: `Microscopic 3D cellular visualization of human cardiac muscle tissue on a dark black background. Interconnecting cylindrical striated cardiomyocytes showing microscopic sarcomere cross-striations, mitochondria clusters, and glowing gap junction intercalated discs synchronizing mechanical contractions. Scientific biological visualization, scanning electron microscope aesthetic, 8k render, no text, no letters, no labels, no diagrams, no watermarks.`
+
+---
+
+## Post 03: The Human Brain (`03-human-brain`)
+*Theme: Neuroscience & Connectome | Accent: Electric Purple & Cyan (#9370db)*
+
+### Slide 1 (Hero Hook) -> `raw_brain_01.png`
+> **Prompt**: `Cinematic 3D render of the human brain lateral cerebral cortex on a pure dark black background. Intricate folded gyri and deep sulci glowing with deep violet, electric indigo, and soft cyan bioluminescent neural activity pulsing through cortical layers, delicate translucent pia mater vascular sheen under dramatic rim lighting. Medical Octane render, photorealistic depth of field, 8k resolution, completely clean visual with absolutely no text, no labels, no words, no diagrams, no watermarks.`
+
+### Slide 2 (Fact 1: Multipolar Pyramidal Neuron) -> `raw_brain_02.png`
+> **Prompt**: `Cinematic 3D visualization of a single human multipolar pyramidal neuron on a dark background. Complex branching dendritic arbor with dendritic spines, prominent glowing cell body soma with nucleus, and a long axon wrapped in glistening cylindrical myelin sheaths with exposed Nodes of Ranvier glowing with bioelectric golden sparks. High-end neurobiology art, dramatic volumetric lighting, 8k render, no text, no labels, no words, no arrows, no watermarks.`
+
+### Slide 3 (Fact 2: Synaptic Cleft Transmission) -> `raw_brain_03.png`
+> **Prompt**: `Microscopic 3D visualization of a chemical synapse junction on a dark black background. Presynaptic axon terminal bouton packed with spherical synaptic vesicles fusing with the active zone membrane, releasing glowing amber and cyan neurotransmitter molecules across a 20-nanometer synaptic cleft toward postsynaptic receptor channels. Nanoscale molecular biology aesthetic, shallow depth of field, 8k resolution, no text, no labels, no words, no diagrams, no watermarks.`
+
+### Slide 4 (Fact 3: Blood-Brain Barrier & Astrocytes) -> `raw_brain_04.png`
+> **Prompt**: `Cinematic 3D microscopic cutaway of a human cerebral capillary and the blood-brain barrier on a dark background. Star-shaped astrocyte glial cells wrapping glowing podocyte end-feet tightly around endothelial microvessel walls, protecting passing red blood cells while selectively transporting nutrients. Scientific cellular illustration, high-contrast bioluminescent lighting, 8k render, no text, no labels, no words, no annotations, no watermarks.`
+
+### Slide 5 (CTA: Connectome & Synaptic Plasticity) -> `raw_brain_05.png`
+> **Prompt**: `Cinematic 3D render of a dense neural network connectome on a deep dark background. Thousands of interconnected glowing neurons firing in synchronized harmony, brilliant flashes of cyan and lavender light racing along synaptic pathways, representing learning, memory, and cognitive plasticity. Cosmic biological visualization, Octane render, 8k resolution, no text, no letters, no labels, no diagrams, no watermarks.`
+
+---
+
+## Post 04: The Human Lungs (`04-human-lungs`)
+*Theme: Pulmonology & Gas Exchange | Accent: Cerulean Blue & Aqua (#00b4f0)*
+
+### Slide 1 (Hero Hook) -> `raw_lungs_01.png`
+> **Prompt**: `Cinematic 3D render of the human respiratory bronchial tree suspended in dark space on a pure black background. Trachea branching into primary bronchi and thousands of delicate glowing cyan and aqua terminal bronchioles, forming an inverted biological glowing arbor with soft translucent pulmonary lobe contours. High-end medical Octane render, dramatic cool volumetric highlights, 8k resolution, clean visual with absolutely no text, no labels, no words, no diagrams, no watermarks.`
+
+### Slide 2 (Fact 1: Alveolar Clusters) -> `raw_lungs_02.png`
+> **Prompt**: `Microscopic 3D cutaway of human pulmonary alveoli clustered like delicate translucent grapes on a deep dark background. Microscopic air sacs wrapped in a fine web of glowing capillaries with individual red blood cells visible through ultra-thin membranes, illuminated by soft aqua and crimson bioluminescent lighting. Medical biological visualization, photorealistic depth of field, 8k render, no text, no labels, no words, no arrows, no watermarks.`
+
+### Slide 3 (Fact 2: Blood-Air Diffusion Barrier) -> `raw_lungs_03.png`
+> **Prompt**: `Nanoscale 3D scientific visualization of the human blood-air barrier cross-section on a dark black background. Type I alveolar epithelial cell sharing a microscopic basement membrane with capillary endothelium, oxygen molecules represented as glowing golden particles diffusing rapidly into hemoglobin molecules inside a red blood cell. High-precision physiology illustration, 8k resolution, no text, no labels, no words, no diagrams, no watermarks.`
+
+### Slide 4 (Fact 3: Type II Cells & Surfactant) -> `raw_lungs_04.png`
+> **Prompt**: `Microscopic 3D cellular render of Type II alveolar cells (great alveolar cells) on a dark studio background. Cuboidal secretory cells releasing lamellar bodies containing dipalmitoylphosphatidylcholine (DPPC) surfactant, forming a glistening molecular protective layer over moist alveolar fluid to lower surface tension. Cellular biology aesthetic, dramatic edge lighting, 8k render, no text, no labels, no words, no annotations, no watermarks.`
+
+### Slide 5 (CTA: Thoracic Diaphragm Bellows) -> `raw_lungs_05.png`
+> **Prompt**: `Cinematic 3D anatomical visualization of the human thoracic diaphragm muscle beneath the lungs on a deep dark background. Dome-shaped muscular sheet with central tendon contracting downward, expanding the ribcage cavity and generating negative pressure inhalation, glowing with delicate cyan and warm amber biomechanical tension lines. Medical physiology visualization, 8k Octane render, no text, no letters, no labels, no diagrams, no watermarks.`
+
+---
+
+## ⚡ What to Do After Images are Generated:
+1. Place all 20 `.png` files in the `raw_batch/` directory.
+2. Run our master compositor:
+   ```bash
+   python build_carousel_batch.py
+   ```
+3. Open `preview.html` to review the rendered phone carousel.
+4. Run `python publish_batch.py` to test and push to GitHub.

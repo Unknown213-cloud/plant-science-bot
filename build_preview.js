@@ -1,0 +1,1887 @@
+const fs = require('fs');
+const path = require('path');
+
+const queueDir = path.join(__dirname, 'queue');
+const entries = fs.readdirSync(queueDir, { withFileTypes: true });
+const posts = [];
+
+// Upcoming scheduled slots (Mon/Wed/Fri/Sun at 13:00 UTC), calculated on each build.
+const scheduleDays = [];
+const slot = new Date();
+slot.setUTCHours(13, 0, 0, 0);
+if (slot <= new Date()) slot.setUTCDate(slot.getUTCDate() + 1);
+while (scheduleDays.length < Math.max(entries.length, 8)) {
+  if ([0, 1, 3, 5].includes(slot.getUTCDay())) {
+    scheduleDays.push({
+      day: slot.toLocaleDateString('en-US', { weekday: 'long', timeZone: 'UTC' }),
+      date: slot.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }),
+      time: '13:00 UTC (scheduled)', status: scheduleDays.length ? 'Queued' : 'Next scheduled slot'
+    });
+  }
+  slot.setUTCDate(slot.getUTCDate() + 1);
+}
+// Read facts_check.md if present for topic hooks/titles
+let factsCheckContent = '';
+try {
+  factsCheckContent = fs.readFileSync(path.join(queueDir, 'facts_check.md'), 'utf-8');
+} catch (e) {}
+
+function getHookFromFacts(folderName) {
+  const regex = new RegExp(`## Post \\d+:.*?\\(\`${folderName}\`\\)[\\s\\S]*?- \\*\\*Hook\\*\\*: "(.*?)"`, 'i');
+  const match = factsCheckContent.match(regex);
+  return match ? match[1] : '';
+}
+
+for (const entry of entries) {
+  if (entry.isDirectory()) {
+    const postDir = path.join(queueDir, entry.name);
+    const files = fs.readdirSync(postDir);
+    const slides = files
+      .filter(f => /\.(png|jpe?g|webp)$/i.test(f))
+      .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+
+    if (slides.length === 0) continue;
+
+    let caption = '';
+    const capFile = path.join(postDir, 'caption.txt');
+    if (fs.existsSync(capFile)) {
+      caption = fs.readFileSync(capFile, 'utf-8').trim();
+    }
+
+    const match = entry.name.match(/^(\d+)/);
+    const num = match ? parseInt(match[1], 10) : 9999;
+
+    const rawTitle = entry.name
+      .replace(/^\d+-?/, '')
+      .split('-')
+      .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ');
+
+    const hook = getHookFromFacts(entry.name) || caption.split('\n')[0] || rawTitle;
+
+    posts.push({
+      num,
+      folder: entry.name,
+      title: rawTitle,
+      hook,
+      slides: slides.map(s => `queue/${entry.name}/${s}`),
+      slideNames: slides,
+      caption,
+      likeCount: Math.floor(1400 + Math.random() * 2500)
+    });
+  }
+}
+
+// Sort matching post_next.py: numeric prefix first, then name
+posts.sort((a, b) => a.num - b.num || a.folder.localeCompare(b.folder));
+
+posts.forEach((p, idx) => {
+  p.schedule = scheduleDays[idx] || { day: 'Upcoming', date: 'TBD', time: '13:00 UTC', status: 'Queued' };
+  p.queueIndex = idx + 1;
+});
+
+const postsJson = JSON.stringify(posts, null, 2);
+
+const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>🌿 Plant Science Bot • Instagram Carousel Previewer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    /* Design Tokens */
+    :root {
+      --bg-base: #090b0e;
+      --bg-surface: #12151b;
+      --bg-surface-elevated: #1a1e27;
+      --bg-card: rgba(22, 27, 36, 0.7);
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-strong: rgba(255, 255, 255, 0.16);
+      --text-main: #f3f4f6;
+      --text-secondary: #9ca3af;
+      --text-muted: #6b7280;
+      --accent-green: #10b981;
+      --accent-green-glow: rgba(16, 185, 129, 0.35);
+      --ig-blue: #0095f6;
+      --ig-heart: #ff3040;
+      --ig-gradient: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+      --phone-border: #2c2f38;
+      --phone-bg: #000000;
+      --phone-w: 420px;
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --radius-phone: 50px;
+      --shadow-elevation: 0 24px 60px -12px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.08);
+      --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--bg-base);
+      background-image: 
+        radial-gradient(ellipse at 15% 15%, rgba(16, 185, 129, 0.12), transparent 45%),
+        radial-gradient(ellipse at 85% 85%, rgba(188, 24, 136, 0.08), transparent 50%),
+        radial-gradient(ellipse at 50% 50%, rgba(0, 149, 246, 0.05), transparent 60%);
+      background-attachment: fixed;
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* Top App Navigation Header */
+    .app-header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 12px 24px;
+      background: rgba(12, 15, 20, 0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .brand-section {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    .brand-logo {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #059669, #10b981);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 14px var(--accent-green-glow);
+    }
+
+    .brand-logo svg {
+      width: 22px;
+      height: 22px;
+      fill: #ffffff;
+    }
+
+    .brand-text h1 {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .brand-badge {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--accent-green);
+      padding: 2px 7px;
+      border-radius: 20px;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .brand-subtitle {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    /* Post Navigation Controls in Header */
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .post-switcher-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg-surface-elevated);
+      padding: 4px 8px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .nav-arrow-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .nav-arrow-btn:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.1);
+      color: #ffffff;
+    }
+
+    .nav-arrow-btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    .post-dropdown {
+      background: transparent;
+      border: none;
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 4px 28px 4px 8px;
+      cursor: pointer;
+      outline: none;
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 6px center;
+      max-width: 280px;
+      text-overflow: ellipsis;
+    }
+
+    .post-dropdown option {
+      background-color: #1a1e27;
+      color: #ffffff;
+      padding: 8px;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .icon-btn {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+      padding: 7px 12px;
+      border-radius: var(--radius-md);
+      font-size: 12px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: var(--font-sans);
+    }
+
+    .icon-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #ffffff;
+      border-color: var(--border-strong);
+    }
+
+    .icon-btn.active {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--accent-green);
+      border-color: rgba(16, 185, 129, 0.3);
+    }
+
+    /* Main Content Layout */
+    .app-workspace {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 32px;
+      max-width: 1360px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 28px 24px 60px;
+    }
+
+    @media (max-width: 1040px) {
+      .app-workspace {
+        grid-template-columns: 1fr;
+        justify-items: center;
+      }
+    }
+
+    /* Center Stage: Phone Frame */
+    .preview-stage {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .stage-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      max-width: var(--phone-w);
+      padding: 0 4px;
+    }
+
+    .post-meta-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-subtle);
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent-green);
+      box-shadow: 0 0 8px var(--accent-green);
+    }
+
+    /* Device Mockup Shell */
+    .phone-mockup {
+      width: 100%;
+      max-width: var(--phone-w);
+      background: #191b22;
+      border-radius: var(--radius-phone);
+      padding: 11px;
+      box-shadow: 
+        0 0 0 1px rgba(255, 255, 255, 0.12),
+        0 12px 35px -8px rgba(0, 0, 0, 0.7),
+        0 30px 70px -10px rgba(0, 0, 0, 0.9);
+      position: relative;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* Side volume buttons simulation */
+    .phone-mockup::before {
+      content: '';
+      position: absolute;
+      left: -3px;
+      top: 115px;
+      height: 48px;
+      width: 3px;
+      background: #3a3e4c;
+      border-radius: 2px 0 0 2px;
+      box-shadow: 0 65px 0 #3a3e4c;
+    }
+
+    .phone-mockup::after {
+      content: '';
+      position: absolute;
+      right: -3px;
+      top: 135px;
+      height: 70px;
+      width: 3px;
+      background: #3a3e4c;
+      border-radius: 0 2px 2px 0;
+    }
+
+    .phone-screen {
+      background: var(--phone-bg);
+      border-radius: 40px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      border: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    /* iPhone Status Bar */
+    .phone-status-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 24px 6px;
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      position: relative;
+      z-index: 20;
+    }
+
+    .dynamic-island {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 108px;
+      height: 28px;
+      background: #000000;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      z-index: 25;
+    }
+
+    .camera-lens {
+      width: 11px;
+      height: 11px;
+      background: #0c1524;
+      border-radius: 50%;
+      box-shadow: inset 0 0 2px #1e3a5f;
+    }
+
+    .status-icons {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* Instagram Native Top App Bar */
+    .ig-app-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 14px 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    }
+
+    .ig-header-user {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 15px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .ig-verified-badge {
+      width: 15px;
+      height: 15px;
+      color: var(--ig-blue);
+      display: inline-block;
+      vertical-align: middle;
+    }
+
+    .ig-header-icons {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      color: #ffffff;
+    }
+
+    .ig-header-icons svg {
+      cursor: pointer;
+      transition: transform 0.15s ease;
+    }
+
+    .ig-header-icons svg:hover {
+      transform: scale(1.1);
+    }
+
+    /* Instagram Post Card Component */
+    .ig-post-card {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+    }
+
+    /* Post Author Header */
+    .post-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+    }
+
+    .post-author {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+
+    .avatar-ring {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--ig-gradient);
+      padding: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(220, 39, 67, 0.3);
+    }
+
+    .avatar-inner {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: #000000;
+      border: 1.5px solid #000000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent-green);
+    }
+
+    .avatar-inner svg {
+      width: 18px;
+      height: 18px;
+      fill: var(--accent-green);
+    }
+
+    .post-author-info {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.25;
+    }
+
+    .author-name-row {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .post-watermark-row {
+      font-size: 11px;
+      color: var(--text-secondary);
+      font-weight: 400;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .post-options-btn {
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 6px;
+    }
+
+    /* 4:5 Carousel Container */
+    .carousel-container {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 4 / 5;
+      background: #000000;
+      overflow: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .carousel-scroller {
+      display: flex;
+      width: 100%;
+      height: 100%;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scroll-snap-type: x mandatory;
+      scroll-behavior: smooth;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    .carousel-scroller::-webkit-scrollbar {
+      display: none;
+    }
+
+    .carousel-slide {
+      flex: 0 0 100%;
+      width: 100%;
+      height: 100%;
+      scroll-snap-align: start;
+      scroll-snap-stop: always;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #000000;
+    }
+
+    .carousel-slide img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      pointer-events: none;
+    }
+
+    /* Top Badges over Image */
+    .slide-badge-counter {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: rgba(18, 18, 18, 0.72);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      color: #ffffff;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 14px;
+      letter-spacing: 0.04em;
+      z-index: 10;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .slide-watermark-tag {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      background: rgba(18, 18, 18, 0.65);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      z-index: 10;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    /* Carousel Floating Arrows (Desktop) */
+    .carousel-arrow {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(26, 26, 26, 0.8);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 15;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    }
+
+    .carousel-arrow:hover {
+      background: rgba(255, 255, 255, 0.95);
+      color: #000000;
+      transform: translateY(-50%) scale(1.1);
+    }
+
+    .carousel-arrow.prev {
+      left: 10px;
+    }
+
+    .carousel-arrow.next {
+      right: 10px;
+    }
+
+    .carousel-arrow.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* Big Heart Pop on Double Tap */
+    .heart-pop {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0);
+      width: 90px;
+      height: 90px;
+      pointer-events: none;
+      z-index: 20;
+      transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.35s ease;
+      opacity: 0;
+    }
+
+    .heart-pop.active {
+      transform: translate(-50%, -50%) scale(1.2);
+      opacity: 0.95;
+    }
+
+    /* Instagram Action Bar */
+    .post-action-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px 6px;
+    }
+
+    .action-icons-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .action-icon-btn {
+      background: none;
+      border: none;
+      color: #ffffff;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2px;
+      transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .action-icon-btn:hover {
+      transform: scale(1.15);
+    }
+
+    .action-icon-btn.liked svg {
+      fill: var(--ig-heart);
+      stroke: var(--ig-heart);
+      animation: heartBounce 0.3s ease;
+    }
+
+    .action-icon-btn.saved svg {
+      fill: #ffffff;
+      stroke: #ffffff;
+    }
+
+    @keyframes heartBounce {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.3); }
+      100% { transform: scale(1); }
+    }
+
+    /* Dot Indicators */
+    .carousel-dots {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .dot-item {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.35);
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .dot-item.active {
+      background: var(--ig-blue);
+      transform: scale(1.35);
+      box-shadow: 0 0 8px rgba(0, 149, 246, 0.5);
+    }
+
+    /* Likes Count */
+    .post-likes-row {
+      padding: 4px 14px 2px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    /* Caption with More Expansion */
+    .post-caption-section {
+      padding: 4px 14px 12px;
+      font-size: 13px;
+      line-height: 1.45;
+      color: #e5e7eb;
+    }
+
+    .caption-author {
+      font-weight: 700;
+      color: #ffffff;
+      margin-right: 6px;
+    }
+
+    .caption-content {
+      display: inline;
+      word-break: break-word;
+      white-space: pre-wrap;
+    }
+
+    .caption-content.clamped {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      white-space: normal;
+    }
+
+    .more-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 13px;
+      margin-left: 4px;
+      display: inline-block;
+      transition: color 0.15s ease;
+    }
+
+    .more-btn:hover {
+      color: var(--text-secondary);
+      text-decoration: underline;
+    }
+
+    .caption-hashtag {
+      color: var(--ig-blue);
+      text-decoration: none;
+    }
+
+    .post-date-tag {
+      padding: 0 14px 14px;
+      font-size: 10px;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    /* Slide Thumbnails Scrubber Strip */
+    .scrubber-wrap {
+      width: 100%;
+      max-width: var(--phone-w);
+      background: var(--bg-surface);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .scrubber-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .scrubber-track {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+
+    .scrubber-thumb {
+      flex: 0 0 calc((100% - 32px) / 5);
+      aspect-ratio: 4 / 5;
+      border-radius: 6px;
+      overflow: hidden;
+      border: 2px solid transparent;
+      cursor: pointer;
+      position: relative;
+      background: #000000;
+      transition: all 0.2s ease;
+    }
+
+    .scrubber-thumb:hover {
+      transform: translateY(-2px);
+      border-color: rgba(255, 255, 255, 0.4);
+    }
+
+    .scrubber-thumb.active {
+      border-color: var(--accent-green);
+      box-shadow: 0 0 10px var(--accent-green-glow);
+    }
+
+    .scrubber-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .thumb-label {
+      position: absolute;
+      bottom: 2px;
+      right: 2px;
+      background: rgba(0, 0, 0, 0.7);
+      color: #ffffff;
+      font-size: 9px;
+      font-weight: 700;
+      padding: 1px 4px;
+      border-radius: 4px;
+    }
+
+    /* Right Sidebar: Planned Posting Order */
+    .queue-sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .sidebar-panel {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .sidebar-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .sidebar-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .queue-count-badge {
+      font-size: 11px;
+      font-weight: 700;
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-secondary);
+      padding: 2px 8px;
+      border-radius: 12px;
+    }
+
+    .schedule-info-box {
+      background: rgba(16, 185, 129, 0.08);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      font-size: 12px;
+      color: #d1fae5;
+      line-height: 1.4;
+      display: flex;
+      gap: 8px;
+    }
+
+    .schedule-info-box svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+      fill: var(--accent-green);
+      margin-top: 1px;
+    }
+
+    /* Queue Timeline List */
+    .queue-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 580px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .queue-list::-webkit-scrollbar {
+      width: 5px;
+    }
+
+    .queue-list::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+    }
+
+    .queue-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 10px 12px;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+      text-align: left;
+    }
+
+    .queue-card:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: var(--border-strong);
+      transform: translateX(3px);
+    }
+
+    .queue-card.active {
+      background: rgba(16, 185, 129, 0.12);
+      border-color: var(--accent-green);
+      box-shadow: 0 4px 14px var(--accent-green-glow);
+    }
+
+    .queue-card.active::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 10%;
+      height: 80%;
+      width: 3px;
+      background: var(--accent-green);
+      border-radius: 0 2px 2px 0;
+    }
+
+    .card-thumb {
+      width: 44px;
+      height: 55px;
+      border-radius: 6px;
+      overflow: hidden;
+      flex-shrink: 0;
+      background: #000000;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .card-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .card-info {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .card-top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+    }
+
+    .card-order-badge {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--accent-green);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .card-status-badge {
+      font-size: 9px;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-secondary);
+    }
+
+    .card-status-badge.highlight {
+      background: rgba(16, 185, 129, 0.2);
+      color: var(--accent-green);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .card-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #ffffff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .card-date {
+      font-size: 11px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* Keyboard Shortcuts Footer */
+    .shortcuts-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      font-size: 11px;
+      color: var(--text-muted);
+      padding: 14px 20px;
+      background: rgba(12, 15, 20, 0.5);
+      border-top: 1px solid var(--border-subtle);
+      flex-wrap: wrap;
+    }
+
+    .kbd-shortcut {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    kbd {
+      background: #1e232e;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.1);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-main);
+    }
+
+    /* Toast Notification */
+    .toast-msg {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #1f2937;
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      padding: 10px 18px;
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 1000;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      pointer-events: none;
+    }
+
+    .toast-msg.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    /* Minimal View Toggle (Hide Phone Frame) */
+    body.clean-feed-mode .phone-mockup {
+      border-radius: var(--radius-md);
+      padding: 0;
+      background: transparent;
+      box-shadow: var(--shadow-elevation);
+    }
+    body.clean-feed-mode .phone-mockup::before,
+    body.clean-feed-mode .phone-mockup::after,
+    body.clean-feed-mode .phone-status-bar,
+    body.clean-feed-mode .dynamic-island {
+      display: none;
+    }
+    body.clean-feed-mode .phone-screen {
+      border-radius: var(--radius-md);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation Header -->
+  <header class="app-header">
+    <div class="brand-section">
+      <div class="brand-logo">
+        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12c0 3.88 2.22 7.24 5.46 8.92-.12-.7-.23-1.78.05-2.55.25-.7 1.63-4.14 1.63-4.14s-.42-.83-.42-2.07c0-1.94 1.13-3.39 2.53-3.39 1.19 0 1.77.89 1.77 1.97 0 1.2-.76 3-1.16 4.66-.33 1.4.7 2.54 2.08 2.54 2.5 0 4.42-2.63 4.42-6.43 0-3.36-2.42-5.71-5.87-5.71-4 0-6.34 3-6.34 6.09 0 1.21.46 2.5 1.04 3.2.11.14.13.26.1.4-.1.43-.34 1.4-.39 1.59-.06.26-.2.32-.47.19C3.76 19.46 2.8 16.48 2.8 12.35 2.8 6.8 6.84 2 12 2z"/></svg>
+      </div>
+      <div class="brand-text">
+        <h1>Plant Science Bot <span class="brand-badge">Feed Inspector</span></h1>
+        <div class="brand-subtitle">Automated Instagram Educational Publishing Pipeline</div>
+      </div>
+    </div>
+
+    <!-- Post Dropdown & Quick Switchers -->
+    <div class="header-controls">
+      <div class="post-switcher-wrap">
+        <button id="prevPostBtn" class="nav-arrow-btn" title="Previous Post (P or [)" aria-label="Previous Post">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
+        <select id="postDropdown" class="post-dropdown" aria-label="Select Queued Post"></select>
+        <button id="nextPostBtn" class="nav-arrow-btn" title="Next Post (N or ])" aria-label="Next Post">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+      </div>
+
+      <div class="header-actions">
+        <button id="toggleFrameBtn" class="icon-btn active" title="Toggle Phone Shell Frame">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></svg>
+          Phone Frame
+        </button>
+        <button id="copyCaptionBtn" class="icon-btn" title="Copy Current Caption">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+          Copy Caption
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Workspace: Phone Preview & Planned Posting Order Panel -->
+  <main class="app-workspace">
+
+    <!-- Center Stage: Instagram Phone Preview -->
+    <section class="preview-stage">
+      <div class="stage-toolbar">
+        <div class="post-meta-pill">
+          <span class="live-dot"></span>
+          <span id="postStatusLabel">Post #1 • Next to publish</span>
+        </div>
+        <div class="post-meta-pill" id="postScheduleLabel">
+          Fri, Oct 16 • 13:00 UTC
+        </div>
+      </div>
+
+      <!-- Phone Device Container -->
+      <div class="phone-mockup" id="phoneMockup">
+        <div class="phone-screen">
+          <!-- iPhone Top Status Bar -->
+          <div class="phone-status-bar">
+            <span>9:41</span>
+            <div class="dynamic-island">
+              <div class="camera-lens"></div>
+            </div>
+            <div class="status-icons">
+              <svg width="15" height="11" viewBox="0 0 17 11" fill="currentColor"><path d="M1 8.5h2v2H1zm4-3h2v5H5zm4-3h2v8H9zm4-2h2v10h-2z"/></svg>
+              <svg width="14" height="11" viewBox="0 0 16 12" fill="currentColor"><path d="M8 2.5C5.1 2.5 2.5 3.7.7 5.7L0 4.9C2.1 2.6 5 1.2 8 1.2s5.9 1.4 8 3.7l-.7.8C13.5 3.7 10.9 2.5 8 2.5zm0 3.8c-1.8 0-3.4.8-4.6 2.1l-.7-.8c1.5-1.6 3.5-2.6 5.3-2.6s3.8 1 5.3 2.6l-.7.8c-1.2-1.3-2.8-2.1-4.6-2.1zm0 3.8c-.8 0-1.5.3-2.1.9l-.7-.7c1-.9 2.1-1.4 2.8-1.4s1.8.5 2.8 1.4l-.7.7c-.6-.6-1.3-.9-2.1-.9zM8 12a1.2 1.2 0 1 1 0-2.4 1.2 1.2 0 0 1 0 2.4z"/></svg>
+              <svg width="22" height="11" viewBox="0 0 25 12" fill="currentColor"><rect x="1" y="1" width="20" height="10" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><rect x="3" y="3" width="14" height="6" rx="1.5"/><path d="M23 4.5v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            </div>
+          </div>
+
+          <!-- Instagram Top Bar -->
+          <div class="ig-app-bar">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6"/></svg>
+            <div class="ig-header-user">
+              plantscience.bot
+              <svg class="ig-verified-badge" viewBox="0 0 24 24" fill="currentColor"><path d="m9 12 2 2 4-4m6 2a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
+            </div>
+            <div class="ig-header-icons">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 12h.01M12 12h.01M18 12h.01"/></svg>
+            </div>
+          </div>
+
+          <!-- Instagram Post Card -->
+          <article class="ig-post-card">
+            <!-- Author Row with Page Name & Watermark -->
+            <div class="post-header">
+              <div class="post-author">
+                <div class="avatar-ring">
+                  <div class="avatar-inner">
+                    <svg viewBox="0 0 24 24"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm1 14.5c0 .8-.7 1.5-1.5 1.5S10 17.3 10 16.5V11c0-.8.7-1.5 1.5-1.5s1.5.7 1.5 1.5v5.5zm-.5-8.5c-.8 0-1.5-.7-1.5-1.5s.7-1.5 1.5-1.5 1.5.7 1.5 1.5-.7 1.5-1.5 1.5z"/></svg>
+                  </div>
+                </div>
+                <div class="post-author-info">
+                  <div class="author-name-row">
+                    plantscience.bot
+                    <svg class="ig-verified-badge" viewBox="0 0 24 24" fill="currentColor"><path d="m9 12 2 2 4-4m6 2a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
+                  </div>
+                  <div class="post-watermark-row" id="postWatermark">
+                    🌿 Plant Science Bot • Educational Series
+                  </div>
+                </div>
+              </div>
+              <button class="post-options-btn" aria-label="Post Options">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+              </button>
+            </div>
+
+            <!-- 4:5 Carousel Viewport -->
+            <div class="carousel-container" id="carouselContainer">
+              <!-- Slides Horizontal Scroller -->
+              <div class="carousel-scroller" id="carouselScroller"></div>
+
+              <!-- Slide Count Overlay -->
+              <div class="slide-badge-counter" id="slideBadgeCounter">1 / 5</div>
+
+              <!-- Watermark Overlay Tag -->
+              <div class="slide-watermark-tag">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15v-4H8l5-7v4h3l-5 7z"/></svg>
+                <span>@plantscience.bot</span>
+              </div>
+
+              <!-- Desktop Arrow Buttons -->
+              <button class="carousel-arrow prev hidden" id="prevSlideBtn" title="Previous Slide (←)" aria-label="Previous Slide">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+              </button>
+              <button class="carousel-arrow next" id="nextSlideBtn" title="Next Slide (→)" aria-label="Next Slide">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+              </button>
+
+              <!-- Heart Pop on Double Click/Tap -->
+              <svg class="heart-pop" id="heartPop" viewBox="0 0 24 24" fill="#ff3040"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            </div>
+
+            <!-- Action Buttons Bar & Dot Indicators -->
+            <div class="post-action-bar">
+              <div class="action-icons-left">
+                <!-- Heart / Like -->
+                <button class="action-icon-btn" id="likeBtn" title="Like Post (Space or Double-click image)" aria-label="Like Post">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+                </button>
+                <!-- Comment -->
+                <button class="action-icon-btn" id="commentBtn" title="Comment" aria-label="Comment">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                </button>
+                <!-- Send / Share -->
+                <button class="action-icon-btn" id="sendBtn" title="Send Post" aria-label="Share Post">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                </button>
+              </div>
+
+              <!-- Carousel Dot Indicators -->
+              <div class="carousel-dots" id="carouselDots"></div>
+
+              <!-- Save / Bookmark -->
+              <div class="action-icons-right">
+                <button class="action-icon-btn" id="saveBtn" title="Save Post" aria-label="Save Post">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Likes Count -->
+            <div class="post-likes-row" id="postLikesCount">
+              Liked by botany_daily and 2,419 others
+            </div>
+
+            <!-- Post Caption with "more" expansion -->
+            <div class="post-caption-section">
+              <span class="caption-author">plantscience.bot</span>
+              <span class="caption-content clamped" id="captionText"></span>
+              <button class="more-btn" id="moreBtn">more</button>
+            </div>
+
+            <!-- Planned Posting Schedule Tag -->
+            <div class="post-date-tag" id="postDateTag">
+              SCHEDULED • POST 1 OF 8
+            </div>
+          </article>
+        </div>
+      </div>
+
+      <!-- Slide Thumbnails Quick-Scrubber Strip -->
+      <div class="scrubber-wrap">
+        <div class="scrubber-header">
+          <span>Carousel Slide Explorer</span>
+          <span id="scrubberCount">5 Slides (4:5)</span>
+        </div>
+        <div class="scrubber-track" id="scrubberTrack"></div>
+      </div>
+    </section>
+
+    <!-- Right Sidebar: Planned Posting Order & Timeline -->
+    <aside class="queue-sidebar">
+      <div class="sidebar-panel">
+        <div class="sidebar-title-row">
+          <div class="sidebar-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            Planned Posting Order
+          </div>
+          <span class="queue-count-badge" id="queueTotalBadge">8 Posts</span>
+        </div>
+
+        <div class="schedule-info-box">
+          <svg viewBox="0 0 24 24"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+          <div>
+            <strong>Schedule:</strong> Mon, Wed, Fri, Sun at <strong>13:00 UTC</strong>.<br>
+            Managed by <code>daily_post.yml</code> & <code>post_next.py</code>.
+          </div>
+        </div>
+
+        <!-- Ordered Queue Cards List -->
+        <div class="queue-list" id="queueList"></div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Keyboard Shortcuts Cheat Sheet Footer -->
+  <footer class="shortcuts-bar">
+    <div class="kbd-shortcut"><kbd>←</kbd> <kbd>→</kbd> Swipe Slides</div>
+    <div class="kbd-shortcut"><kbd>P</kbd> / <kbd>N</kbd> or <kbd>[</kbd> <kbd>]</kbd> Switch Post</div>
+    <div class="kbd-shortcut"><kbd>Space</kbd> / Double-click Like</div>
+    <div class="kbd-shortcut"><kbd>M</kbd> Expand Caption</div>
+  </footer>
+
+  <!-- Toast Notification -->
+  <div class="toast-msg" id="toastMsg">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+    <span id="toastText">Caption copied to clipboard!</span>
+  </div>
+
+  <!-- Embedded Post Data & Interaction Logic -->
+  <script>
+    // Complete catalog of queued posts extracted from queue/
+    const POSTS_DATA = ${postsJson};
+
+    // Application State
+    let currentPostIndex = 0;
+    let currentSlideIndex = 0;
+    let isCaptionExpanded = false;
+    let likedPosts = new Set();
+    let savedPosts = new Set();
+
+    // DOM Elements
+    const postDropdown = document.getElementById('postDropdown');
+    const prevPostBtn = document.getElementById('prevPostBtn');
+    const nextPostBtn = document.getElementById('nextPostBtn');
+    const toggleFrameBtn = document.getElementById('toggleFrameBtn');
+    const copyCaptionBtn = document.getElementById('copyCaptionBtn');
+    const phoneMockup = document.getElementById('phoneMockup');
+    const carouselContainer = document.getElementById('carouselContainer');
+    const carouselScroller = document.getElementById('carouselScroller');
+    const slideBadgeCounter = document.getElementById('slideBadgeCounter');
+    const prevSlideBtn = document.getElementById('prevSlideBtn');
+    const nextSlideBtn = document.getElementById('nextSlideBtn');
+    const carouselDots = document.getElementById('carouselDots');
+    const likeBtn = document.getElementById('likeBtn');
+    const saveBtn = document.getElementById('saveBtn');
+    const postLikesCount = document.getElementById('postLikesCount');
+    const captionText = document.getElementById('captionText');
+    const moreBtn = document.getElementById('moreBtn');
+    const postWatermark = document.getElementById('postWatermark');
+    const postDateTag = document.getElementById('postDateTag');
+    const postStatusLabel = document.getElementById('postStatusLabel');
+    const postScheduleLabel = document.getElementById('postScheduleLabel');
+    const scrubberTrack = document.getElementById('scrubberTrack');
+    const scrubberCount = document.getElementById('scrubberCount');
+    const queueList = document.getElementById('queueList');
+    const heartPop = document.getElementById('heartPop');
+    const toastMsg = document.getElementById('toastMsg');
+    const toastText = document.getElementById('toastText');
+
+    // Show temporary toast message
+    function showToast(message) {
+      toastText.textContent = message;
+      toastMsg.classList.add('show');
+      setTimeout(() => {
+        toastMsg.classList.remove('show');
+      }, 2400);
+    }
+
+    // Populate dropdown options
+    function initDropdown() {
+      postDropdown.innerHTML = '';
+      POSTS_DATA.forEach((post, idx) => {
+        const opt = document.createElement('option');
+        opt.value = idx;
+        opt.textContent = \`[\${idx + 1}/\${POSTS_DATA.length}] \${post.folder} • \${post.schedule.day}\`;
+        postDropdown.appendChild(opt);
+      });
+      postDropdown.addEventListener('change', (e) => {
+        loadPost(parseInt(e.target.value, 10));
+      });
+    }
+
+    // Render the Planned Posting Order sidebar list
+    function renderQueueSidebar() {
+      queueList.innerHTML = '';
+      POSTS_DATA.forEach((post, idx) => {
+        const card = document.createElement('div');
+        card.className = \`queue-card \${idx === currentPostIndex ? 'active' : ''}\`;
+        card.dataset.index = idx;
+
+        const isNext = idx === 0;
+        card.innerHTML = \`
+          <div class="card-thumb">
+            <img src="\${post.slides[0]}" alt="\${post.title} Slide 1" loading="lazy">
+          </div>
+          <div class="card-info">
+            <div class="card-top-row">
+              <span class="card-order-badge">#\${idx + 1} • \${post.schedule.day}</span>
+              <span class="card-status-badge \${isNext ? 'highlight' : ''}">\${isNext ? 'Next Up' : 'Queued'}</span>
+            </div>
+            <div class="card-title">\${post.title}</div>
+            <div class="card-date">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              \${post.schedule.date} • \${post.schedule.time}
+            </div>
+          </div>
+        \`;
+
+        card.addEventListener('click', () => {
+          loadPost(idx);
+        });
+
+        queueList.appendChild(card);
+      });
+    }
+
+    // Load and display a post
+    function loadPost(postIdx) {
+      if (postIdx < 0 || postIdx >= POSTS_DATA.length) return;
+      currentPostIndex = postIdx;
+      currentSlideIndex = 0;
+      isCaptionExpanded = false;
+
+      const post = POSTS_DATA[postIdx];
+
+      // Update dropdown & header controls
+      postDropdown.value = postIdx;
+      prevPostBtn.disabled = postIdx === 0;
+      nextPostBtn.disabled = postIdx === POSTS_DATA.length - 1;
+
+      // Update Header & Status Labels
+      const isNext = postIdx === 0;
+      postStatusLabel.textContent = \`Post #\${postIdx + 1} of \${POSTS_DATA.length} • \${isNext ? 'Next to Publish' : 'Queued in Order'}\`;
+      postScheduleLabel.textContent = \`\${post.schedule.day}, \${post.schedule.date} • \${post.schedule.time}\`;
+      postWatermark.textContent = \`🌿 Plant Science Bot • \${post.title}\`;
+      postDateTag.textContent = \`SCHEDULED • \${post.schedule.day.toUpperCase()}, \${post.schedule.date.toUpperCase()}\`;
+
+      // Build Slides in Carousel Scroller
+      carouselScroller.innerHTML = '';
+      post.slides.forEach((slideSrc, sIdx) => {
+        const slideEl = document.createElement('div');
+        slideEl.className = 'carousel-slide';
+        slideEl.dataset.slideIndex = sIdx;
+
+        const img = document.createElement('img');
+        img.src = slideSrc;
+        img.alt = \`\${post.title} - Slide \${sIdx + 1}\`;
+        img.loading = sIdx <= 1 ? 'eager' : 'lazy';
+
+        slideEl.appendChild(img);
+        carouselScroller.appendChild(slideEl);
+      });
+
+      // Reset scroll position
+      carouselScroller.scrollLeft = 0;
+
+      // Build Pagination Dots
+      carouselDots.innerHTML = '';
+      post.slides.forEach((_, sIdx) => {
+        const dot = document.createElement('div');
+        dot.className = \`dot-item \${sIdx === 0 ? 'active' : ''}\`;
+        dot.addEventListener('click', () => goToSlide(sIdx));
+        carouselDots.appendChild(dot);
+      });
+
+      // Build Thumbnails Scrubber Strip
+      scrubberTrack.innerHTML = '';
+      scrubberCount.textContent = \`\${post.slides.length} Slides (4:5)\`;
+      post.slides.forEach((slideSrc, sIdx) => {
+        const thumb = document.createElement('div');
+        thumb.className = \`scrubber-thumb \${sIdx === 0 ? 'active' : ''}\`;
+        thumb.innerHTML = \`
+          <img src="\${slideSrc}" alt="Thumbnail \${sIdx + 1}">
+          <span class="thumb-label">\${sIdx + 1}</span>
+        \`;
+        thumb.addEventListener('click', () => goToSlide(sIdx));
+        scrubberTrack.appendChild(thumb);
+      });
+
+      // Update Like & Save Buttons State
+      updateLikeUI();
+      updateSaveUI();
+
+      // Format & Render Caption
+      renderCaption(post.caption);
+
+      // Update slide counter and arrows
+      updateSlideState(0);
+
+      // Highlight active card in sidebar
+      document.querySelectorAll('.queue-card').forEach((c, i) => {
+        c.classList.toggle('active', i === postIdx);
+      });
+    }
+
+    // Render formatted caption text with hashtag links
+    function renderCaption(rawCaption) {
+      // Escape HTML
+      const escaped = rawCaption
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+
+      // Replace hashtags with styled links
+      const withHashtags = escaped.replace(/(#[a-zA-Z0-9_]+)/g, '<a href="#" class="caption-hashtag" onclick="event.preventDefault()">$1</a>');
+
+      captionText.innerHTML = withHashtags;
+      if (isCaptionExpanded) {
+        captionText.classList.remove('clamped');
+        moreBtn.textContent = 'less';
+      } else {
+        captionText.classList.add('clamped');
+        moreBtn.textContent = 'more';
+      }
+    }
+
+    // Toggle caption expansion
+    moreBtn.addEventListener('click', () => {
+      isCaptionExpanded = !isCaptionExpanded;
+      if (isCaptionExpanded) {
+        captionText.classList.remove('clamped');
+        moreBtn.textContent = 'less';
+      } else {
+        captionText.classList.add('clamped');
+        moreBtn.textContent = 'more';
+      }
+    });
+
+    // Go to specific slide
+    function goToSlide(slideIdx) {
+      const slides = carouselScroller.querySelectorAll('.carousel-slide');
+      if (slideIdx < 0 || slideIdx >= slides.length) return;
+      currentSlideIndex = slideIdx;
+      const targetSlide = slides[slideIdx];
+      carouselScroller.scrollTo({
+        left: targetSlide.offsetLeft,
+        behavior: 'smooth'
+      });
+      updateSlideState(slideIdx);
+    }
+
+    // Update slide indicator dots, counter badge, and arrows
+    function updateSlideState(slideIdx) {
+      currentSlideIndex = slideIdx;
+      const totalSlides = POSTS_DATA[currentPostIndex].slides.length;
+
+      // Update Counter Badge
+      slideBadgeCounter.textContent = \`\${slideIdx + 1} / \${totalSlides}\`;
+
+      // Update Arrows
+      prevSlideBtn.classList.toggle('hidden', slideIdx === 0);
+      nextSlideBtn.classList.toggle('hidden', slideIdx === totalSlides - 1);
+
+      // Update Dots
+      const dots = carouselDots.querySelectorAll('.dot-item');
+      dots.forEach((dot, i) => {
+        dot.classList.toggle('active', i === slideIdx);
+      });
+
+      // Update Scrubber Thumbnails
+      const thumbs = scrubberTrack.querySelectorAll('.scrubber-thumb');
+      thumbs.forEach((th, i) => {
+        th.classList.toggle('active', i === slideIdx);
+      });
+    }
+
+    // Scroll listener for carousel swipe detection
+    let scrollTimeout;
+    carouselScroller.addEventListener('scroll', () => {
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => {
+        const slideWidth = carouselScroller.clientWidth;
+        if (slideWidth > 0) {
+          const index = Math.round(carouselScroller.scrollLeft / slideWidth);
+          if (index !== currentSlideIndex) {
+            updateSlideState(index);
+          }
+        }
+      }, 50);
+    });
+
+    // Arrow Buttons
+    prevSlideBtn.addEventListener('click', () => {
+      goToSlide(currentSlideIndex - 1);
+    });
+
+    nextSlideBtn.addEventListener('click', () => {
+      goToSlide(currentSlideIndex + 1);
+    });
+
+    // Post Switch Buttons
+    prevPostBtn.addEventListener('click', () => {
+      loadPost(currentPostIndex - 1);
+    });
+
+    nextPostBtn.addEventListener('click', () => {
+      loadPost(currentPostIndex + 1);
+    });
+
+    // Toggle Phone Frame
+    toggleFrameBtn.addEventListener('click', () => {
+      document.body.classList.toggle('clean-feed-mode');
+      const isClean = document.body.classList.contains('clean-feed-mode');
+      toggleFrameBtn.classList.toggle('active', !isClean);
+      toggleFrameBtn.innerHTML = isClean
+        ? \`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/></svg> Focused View\`
+        : \`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></svg> Phone Frame\`;
+    });
+
+    // Copy Caption to Clipboard
+    copyCaptionBtn.addEventListener('click', () => {
+      const caption = POSTS_DATA[currentPostIndex].caption;
+      navigator.clipboard.writeText(caption).then(() => {
+        showToast('Caption copied to clipboard!');
+      }).catch(() => {
+        // Fallback for file:// context if clipboard API restricted
+        const temp = document.createElement('textarea');
+        temp.value = caption;
+        document.body.appendChild(temp);
+        temp.select();
+        document.execCommand('copy');
+        document.body.removeChild(temp);
+        showToast('Caption copied to clipboard!');
+      });
+    });
+
+    // Like button & Double-click to like
+    function triggerLike(animateHeart = true) {
+      const postId = POSTS_DATA[currentPostIndex].folder;
+      if (likedPosts.has(postId)) {
+        likedPosts.delete(postId);
+      } else {
+        likedPosts.add(postId);
+        if (animateHeart) {
+          heartPop.classList.add('active');
+          setTimeout(() => {
+            heartPop.classList.remove('active');
+          }, 600);
+        }
+      }
+      updateLikeUI();
+    }
+
+    function updateLikeUI() {
+      const postId = POSTS_DATA[currentPostIndex].folder;
+      const isLiked = likedPosts.has(postId);
+      likeBtn.classList.toggle('liked', isLiked);
+      const baseLikes = POSTS_DATA[currentPostIndex].likeCount;
+      const count = isLiked ? baseLikes + 1 : baseLikes;
+      postLikesCount.innerHTML = \`Liked by <strong>botany_daily</strong> and <strong>\${count.toLocaleString()} others</strong>\`;
+    }
+
+    likeBtn.addEventListener('click', () => triggerLike(false));
+
+    // Double click on carousel image to like
+    carouselContainer.addEventListener('dblclick', () => {
+      if (!likedPosts.has(POSTS_DATA[currentPostIndex].folder)) {
+        triggerLike(true);
+      } else {
+        heartPop.classList.add('active');
+        setTimeout(() => {
+          heartPop.classList.remove('active');
+        }, 600);
+      }
+    });
+
+    // Save button
+    saveBtn.addEventListener('click', () => {
+      const postId = POSTS_DATA[currentPostIndex].folder;
+      if (savedPosts.has(postId)) {
+        savedPosts.delete(postId);
+        showToast('Removed from saved posts');
+      } else {
+        savedPosts.add(postId);
+        showToast('Saved to your collection');
+      }
+      updateSaveUI();
+    });
+
+    function updateSaveUI() {
+      const postId = POSTS_DATA[currentPostIndex].folder;
+      saveBtn.classList.toggle('saved', savedPosts.has(postId));
+    }
+
+    // Send / Share Button
+    document.getElementById('sendBtn').addEventListener('click', () => {
+      showToast('Share link copied to clipboard!');
+    });
+
+    // Comment Button
+    document.getElementById('commentBtn').addEventListener('click', () => {
+      showToast('Comments: 48 scientific discussions');
+    });
+
+    // Touch and Mouse Drag Swiping for desktop/touch
+    let isDragging = false;
+    let startX = 0;
+    let scrollStart = 0;
+
+    carouselScroller.addEventListener('mousedown', (e) => {
+      isDragging = true;
+      startX = e.pageX;
+      scrollStart = carouselScroller.scrollLeft;
+      carouselScroller.style.scrollBehavior = 'auto';
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      const deltaX = e.pageX - startX;
+      carouselScroller.scrollLeft = scrollStart - deltaX;
+    });
+
+    window.addEventListener('mouseup', (e) => {
+      if (!isDragging) return;
+      isDragging = false;
+      carouselScroller.style.scrollBehavior = 'smooth';
+      const deltaX = e.pageX - startX;
+      const slideWidth = carouselScroller.clientWidth;
+      if (Math.abs(deltaX) > 40) {
+        if (deltaX < 0) {
+          goToSlide(currentSlideIndex + 1);
+        } else {
+          goToSlide(currentSlideIndex - 1);
+        }
+      } else {
+        goToSlide(currentSlideIndex);
+      }
+    });
+
+    // Keyboard Navigation
+    window.addEventListener('keydown', (e) => {
+      // Ignore if typing in an input
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        goToSlide(currentSlideIndex - 1);
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        goToSlide(currentSlideIndex + 1);
+      } else if (e.key === 'ArrowUp' || e.key === '[' || e.key.toLowerCase() === 'p') {
+        e.preventDefault();
+        loadPost(currentPostIndex - 1);
+      } else if (e.key === 'ArrowDown' || e.key === ']' || e.key.toLowerCase() === 'n') {
+        e.preventDefault();
+        loadPost(currentPostIndex + 1);
+      } else if (e.key === ' ') {
+        e.preventDefault();
+        triggerLike(true);
+      } else if (e.key.toLowerCase() === 'm') {
+        e.preventDefault();
+        moreBtn.click();
+      }
+    });
+
+    // Initial Load
+    initDropdown();
+    renderQueueSidebar();
+    loadPost(0);
+  </script>
+</body>
+</html>
+`;
+
+fs.writeFileSync(path.join(__dirname, 'preview.html'), html, 'utf-8');
+console.log('Successfully generated preview.html in repo root!');

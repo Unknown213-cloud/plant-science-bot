@@ -2,113 +2,79 @@ name: Scheduled Instagram Post
 
 on:
   schedule:
-    # Runs at 13:00 UTC on Monday, Wednesday, Friday, and Sunday (0=Sun, 1=Mon, 3=Wed, 5=Fri)
     - cron: '0 13 * * 1,3,5,0'
   workflow_dispatch:
     inputs:
       dry_run:
-        description: 'Simulate without posting or moving files'
-        required: false
+        description: 'Validate without posting or refreshing tokens'
         type: boolean
-        default: false
+        default: true
 
 permissions:
   contents: write
 
+concurrency:
+  group: science-bot-repository-writer
+  cancel-in-progress: false
+
 jobs:
   publish:
     runs-on: ubuntu-latest
-
+    timeout-minutes: 20
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          cache: 'pip'
-
-      - name: Install Dependencies
+          cache: pip
+      - name: Install publishing dependencies
+        run: pip install -r requirements-publish.txt
+      - name: Configure checkpoint author
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-
-      - name: Refresh Instagram Access Token
-        id: refresh_token
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+      - name: Validate every queued post
+        run: python post_next.py --validate-all
+      - name: Refresh and persist access token
+        if: github.event_name == 'schedule' || !inputs.dry_run
         env:
           IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
-          GH_PAT: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
-        run: |
-          python - << 'EOF'
-          import os, requests, sys
-
-          token = os.getenv("IG_ACCESS_TOKEN", "").strip()
-          if not token:
-              print("No IG_ACCESS_TOKEN found in secrets. Skipping refresh.")
-              sys.exit(0)
-
-          url = "https://graph.instagram.com/refresh_access_token"
-          params = {"grant_type": "ig_refresh_token", "access_token": token}
-          
-          try:
-              resp = requests.get(url, params=params, timeout=30)
-              data = resp.json()
-              if resp.status_code == 200 and "access_token" in data:
-                  new_token = data["access_token"]
-                  expires_in = data.get("expires_in", 0)
-                  days = expires_in // 86400
-                  print(f"Token successfully refreshed! Valid for ~{days} days.")
-                  # Export to GITHUB_ENV so subsequent steps use the fresh token
-                  with open(os.environ["GITHUB_ENV"], "a") as f:
-                      f.write(f"IG_ACCESS_TOKEN={new_token}\n")
-                      f.write(f"TOKEN_REFRESHED=true\n")
-                  # Set step output
-                  with open(os.environ["GITHUB_OUTPUT"], "a") as f:
-                      f.write(f"new_token={new_token}\n")
-              else:
-                  err_msg = str(data)
-                  if "24 hours" in err_msg.lower() or "cannot be refreshed" in err_msg.lower():
-                      print("Token is active and was refreshed within the last 24 hours. Continuing with current token.")
-                  else:
-                      print(f"Token refresh response: {data}")
-          except Exception as e:
-              print(f"Token refresh attempt returned: {e}")
-          EOF
-
-      - name: Update Secret With Refreshed Token (If GH_PAT provided)
-        if: env.TOKEN_REFRESHED == 'true' && env.GH_PAT != ''
-        env:
           GH_TOKEN: ${{ secrets.GH_PAT }}
-          NEW_TOKEN: ${{ steps.refresh_token.outputs.new_token }}
-        run: |
-          if [ -n "$NEW_TOKEN" ]; then
-            gh secret set IG_ACCESS_TOKEN --body "$NEW_TOKEN" --repo "${{ github.repository }}" || echo "Notice: Secret update skipped (requires repository secret write permissions)."
-          fi
-
-      - name: Publish Next Post or Dry Run
+        run: python refresh_ci_token.py
+      - name: Publish next post or verify hosted images
         env:
           IG_ACCESS_TOKEN: ${{ env.IG_ACCESS_TOKEN || secrets.IG_ACCESS_TOKEN }}
           IG_USER_ID: ${{ secrets.IG_USER_ID }}
           GITHUB_REPOSITORY: ${{ github.repository }}
-          GITHUB_REF_NAME: ${{ github.ref_name }}
+          GITHUB_REF_NAME: ${{ github.sha }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
         run: |
-          FLAGS=""
-          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
-            FLAGS="--dry-run"
-          fi
-          python post_next.py $FLAGS
-
-      - name: Commit and Push Moved Files
-        if: github.event.inputs.dry_run != 'true'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          
-          if [ -n "$(git status --porcelain queue/ posted/)" ]; then
-            git add queue/ posted/
-            git commit -m "Automated: Archive published post to posted/ [skip ci]"
-            git push
+          if [ "$DRY_RUN" = 'true' ]; then
+            python post_next.py --dry-run --verify-hosted
           else
-            echo "No queue or posted changes to commit."
+            python post_next.py --skip-token-refresh
           fi
+      - name: Persist archive and publication journal even after failure
+        if: always() && (github.event_name == 'schedule' || !inputs.dry_run)
+        run: |
+          git add queue/ posted/
+          if ! git diff --cached --quiet; then
+            git commit -m 'Archive published post and journal [skip ci]'
+          fi
+          for attempt in 1 2 3; do
+            if git push origin HEAD; then exit 0; fi
+            git pull --rebase origin "${GITHUB_REF_NAME}"
+          done
+          exit 1
+      - name: Retain recovery state if persistence fails
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: publication-recovery-${{ github.run_id }}
+          path: |
+            posted/publication_state.json
+            posted/captions.json
+          if-no-files-found: ignore
