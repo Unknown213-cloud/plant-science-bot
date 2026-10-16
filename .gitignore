@@ -1,0 +1,39 @@
+# Instagram API Tokens & Credentials (Local Token Files)
+.env
+.env.*
+!.env.example
+*.token
+*.token.json
+*token*.json
+*token*.txt
+.ig_token*
+token.json
+tokens.json
+credentials.json
+ig_session*
+
+# Python & Virtual Environments
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+
+# Testing & Linting
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
