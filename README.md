@@ -27,7 +27,7 @@ Automated educational Instagram bot that publishes high-resolution plant anatomy
    - Handles the Meta 24-hour refresh minimum gracefully.
 
 5. **GitHub Actions Automation**:
-   - Scheduled daily cron workflow (`.github/workflows/daily_post.yml`) at `13:00 UTC`.
+   - Scheduled workflow (`.github/workflows/daily_post.yml`) running at `13:00 UTC` on **Monday, Wednesday, Friday, and Sunday**.
    - Supports manual execution (`workflow_dispatch`) with optional `--dry-run` simulation.
    - Automatically commits and pushes moved files (`queue/` and `posted/`) back to GitHub with `[skip ci]`.
    - Updates repository secret `IG_ACCESS_TOKEN` when `GH_PAT` is configured.
