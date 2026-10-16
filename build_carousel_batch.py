@@ -15,7 +15,8 @@ import shutil
 import subprocess
 import sys
 import argparse
-import tempfile
+from contextlib import contextmanager
+from uuid import uuid4
 from pathlib import Path
 from datetime import datetime, timezone
 
@@ -73,6 +74,21 @@ def fitted_text(draw, position, text, font, fill, spacing=4):
 
 def save_slide(image, out_path):
     image.convert("RGB").save(out_path, "JPEG", quality=94, subsampling=0, optimize=True)
+
+
+@contextmanager
+def staging_directory(parent):
+    # tempfile uses mode 0700, which creates a private ACL on modern Windows.
+    # Normal mkdir inherits workspace access so moved output stays user-readable.
+    parent = Path(parent).resolve()
+    staging = parent / (".carousel-build-" + uuid4().hex)
+    staging.mkdir()
+    try:
+        yield str(staging)
+    finally:
+        if staging.parent.resolve() != parent or not staging.name.startswith(".carousel-build-"):
+            raise RuntimeError("Unexpected build cleanup path")
+        shutil.rmtree(staging)
 
 
 def draw_pill(draw, box, fill_color, border_color, radius=16, border_width=1):
@@ -501,7 +517,7 @@ def main():
     if any(post["folder"] in history or post["folder"] in journal for post in BATCH_CONFIG):
         raise RuntimeError("This batch has publication history. Use new post IDs for new content.")
     destination.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.TemporaryDirectory(prefix=".carousel-build-", dir=destination.parent) as staging:
+    with staging_directory(destination.parent) as staging:
         QUEUE_DIR = staging
         render_batch()
         from post_next import find_queued_posts
