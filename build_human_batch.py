@@ -98,7 +98,7 @@ def draw_header(draw, category, slide_str, accent_color=(46, 213, 115)):
 
 
 def draw_footer(draw, next_hint="swipe →", show_ai_note=False):
-    draw.text((64, CANVAS_H - 68), "@plantscience.bot", font=f_footer, fill=(130, 150, 160, 200))
+    draw.text((64, CANVAS_H - 68), "@lifeafter_ai", font=f_footer, fill=(130, 150, 160, 200))
     if next_hint:
         h_w = f_footer.getbbox(next_hint)[2]
         draw.text((CANVAS_W - 64 - h_w, CANVAS_H - 68), next_hint, font=f_footer, fill=(190, 220, 210, 230))
@@ -184,7 +184,7 @@ def build_slide_5(raw_path, out_path, cat, brand_label, share_topic, cta_subtext
 
     card2 = (60, 555, CANVAS_W - 60, 765)
     draw_pill(draw, card2, (10, 18, 26, 230), (255, 255, 255, 60), radius=22, border_width=1)
-    draw.text((95, 590), "FOLLOW @PLANTSCIENCE.BOT FOR DAILY SCIENCE", font=f_title, fill=(*light_accent, 255))
+    draw.text((95, 590), "FOLLOW @LIFEAFTER_AI FOR DAILY SCIENCE", font=f_title, fill=(*light_accent, 255))
     draw.text((95, 660), follow_subtext, font=f_body, fill=(210, 225, 235, 240), spacing=6)
 
     card3 = (60, 800, CANVAS_W - 60, CANVAS_H - 120)
@@ -410,7 +410,7 @@ def main():
             raw_s5,
             out_s5,
             post["category"],
-            "@plantscience.bot",
+            "@lifeafter_ai",
             post["share_topic"],
             post["cta_subtext"],
             post["follow_subtext"],

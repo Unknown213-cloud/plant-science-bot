@@ -1281,7 +1281,7 @@ const html = `<!DOCTYPE html>
           <div class="ig-app-bar">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6"/></svg>
             <div class="ig-header-user">
-              plantscience.bot
+              lifeafter_ai
               <svg class="ig-verified-badge" viewBox="0 0 24 24" fill="currentColor"><path d="m9 12 2 2 4-4m6 2a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
             </div>
             <div class="ig-header-icons">
@@ -1301,11 +1301,11 @@ const html = `<!DOCTYPE html>
                 </div>
                 <div class="post-author-info">
                   <div class="author-name-row">
-                    plantscience.bot
+                    lifeafter_ai
                     <svg class="ig-verified-badge" viewBox="0 0 24 24" fill="currentColor"><path d="m9 12 2 2 4-4m6 2a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
                   </div>
                   <div class="post-watermark-row" id="postWatermark">
-                    🌿 Plant Science Bot • Educational Series
+                    ✨ Life After AI • Science & Anatomy
                   </div>
                 </div>
               </div>
@@ -1325,7 +1325,7 @@ const html = `<!DOCTYPE html>
               <!-- Watermark Overlay Tag -->
               <div class="slide-watermark-tag">
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15v-4H8l5-7v4h3l-5 7z"/></svg>
-                <span>@plantscience.bot</span>
+                <span>@lifeafter_ai</span>
               </div>
 
               <!-- Desktop Arrow Buttons -->
@@ -1375,7 +1375,7 @@ const html = `<!DOCTYPE html>
 
             <!-- Post Caption with "more" expansion -->
             <div class="post-caption-section">
-              <span class="caption-author">plantscience.bot</span>
+              <span class="caption-author">lifeafter_ai</span>
               <span class="caption-content clamped" id="captionText"></span>
               <button class="more-btn" id="moreBtn">more</button>
             </div>
@@ -1553,7 +1553,7 @@ const html = `<!DOCTYPE html>
       const isNext = postIdx === 0;
       postStatusLabel.textContent = \`Post #\${postIdx + 1} of \${POSTS_DATA.length} • \${isNext ? 'Next to Publish' : 'Queued in Order'}\`;
       postScheduleLabel.textContent = \`\${post.schedule.day}, \${post.schedule.date} • \${post.schedule.time}\`;
-      postWatermark.textContent = \`🌿 Plant Science Bot • \${post.title}\`;
+      postWatermark.textContent = \`✨ Life After AI • \${post.title}\`;
       postDateTag.textContent = \`SCHEDULED • \${post.schedule.day.toUpperCase()}, \${post.schedule.date.toUpperCase()}\`;
 
       // Build Slides in Carousel Scroller
