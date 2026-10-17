@@ -1,8 +1,9 @@
 {
   "01-human-eye": {
-    "status": "publishing",
+    "status": "published",
     "creation_id": "18020162207945433",
     "fingerprint": "b5990ff7fab9c69a782bb82662e13cd966de6906f8a1f0621d81c7a049f40726",
-    "updated_at": "2026-10-17T12:39:36.020527+00:00"
+    "updated_at": "2026-10-17T12:39:41.268386+00:00",
+    "media_id": "18143295958716918"
   }
 }
