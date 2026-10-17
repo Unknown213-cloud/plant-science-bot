@@ -87,7 +87,7 @@ const html = `<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>🌿 Plant Science Bot • Instagram Carousel Previewer</title>
+  <title>✨ Life After AI • Instagram Carousel Previewer</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -1216,7 +1216,7 @@ const html = `<!DOCTYPE html>
         <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12c0 3.88 2.22 7.24 5.46 8.92-.12-.7-.23-1.78.05-2.55.25-.7 1.63-4.14 1.63-4.14s-.42-.83-.42-2.07c0-1.94 1.13-3.39 2.53-3.39 1.19 0 1.77.89 1.77 1.97 0 1.2-.76 3-1.16 4.66-.33 1.4.7 2.54 2.08 2.54 2.5 0 4.42-2.63 4.42-6.43 0-3.36-2.42-5.71-5.87-5.71-4 0-6.34 3-6.34 6.09 0 1.21.46 2.5 1.04 3.2.11.14.13.26.1.4-.1.43-.34 1.4-.39 1.59-.06.26-.2.32-.47.19C3.76 19.46 2.8 16.48 2.8 12.35 2.8 6.8 6.84 2 12 2z"/></svg>
       </div>
       <div class="brand-text">
-        <h1>Plant Science Bot <span class="brand-badge">Feed Inspector</span></h1>
+        <h1>Life After AI <span class="brand-badge">Feed Inspector</span></h1>
         <div class="brand-subtitle">Automated Instagram Educational Publishing Pipeline</div>
       </div>
     </div>
