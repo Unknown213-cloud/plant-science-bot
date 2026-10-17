@@ -1,16 +1,1 @@
-{
-  "01-human-eye": {
-    "status": "published",
-    "creation_id": "18020144096945433",
-    "fingerprint": "9351abe2f5e0e3497f438926096a6154730ebfe8426df2ce3e1135f8e09a75ea",
-    "updated_at": "2026-10-17T10:25:11.787309+00:00",
-    "media_id": "18016997321748093"
-  },
-  "02-human-heart": {
-    "status": "published",
-    "creation_id": "18020144744945433",
-    "fingerprint": "5f617cc3b77ff3fd05ec5fb3ae00d4228957a76887fddd8df9f1d70fbdfe3328",
-    "updated_at": "2026-10-17T10:31:58.684268+00:00",
-    "media_id": "18177052285401554"
-  }
-}
+{}
