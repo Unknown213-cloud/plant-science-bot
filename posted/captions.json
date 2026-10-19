@@ -12,5 +12,19 @@
     "slide_count": 5,
     "posted_at": "2026-10-17T12:39:42.743264+00:00",
     "media_id": "18143295958716918"
+  },
+  "02-human-heart": {
+    "caption": "Your heart beats 100,000 times a day and pumps 2,000 gallons of blood without taking a single vacation.\n\nHow cardiac mechanics work:\n1. The sinoatrial node fires spontaneous bioelectric pulses to pace your rhythm autonomously.\n2. Four valves open and close with pressure differences to prevent backflow.\n3. Dedicated coronary arteries deliver 250 ml/min of oxygenated blood to working muscle.\n\nDid you know your blood vessels would wrap around the Earth more than twice if laid end to end?\n\n#cardiology #humanheart #anatomy #physiology #hearthealth\n\nAI illustration",
+    "type": "carousel",
+    "slides": [
+      "slide_01.jpg",
+      "slide_02.jpg",
+      "slide_03.jpg",
+      "slide_04.jpg",
+      "slide_05.jpg"
+    ],
+    "slide_count": 5,
+    "posted_at": "2026-10-19T18:58:03.316354+00:00",
+    "media_id": "18125443612687509"
   }
 }
