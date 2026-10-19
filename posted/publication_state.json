@@ -7,9 +7,10 @@
     "media_id": "18143295958716918"
   },
   "02-human-heart": {
-    "status": "publishing",
+    "status": "published",
     "creation_id": "18020530160945433",
     "fingerprint": "14f5ce8ed235b8047a3c90d2984f49b0d63c90b59b73268f22259b01aeccc46c",
-    "updated_at": "2026-10-19T18:57:56.916303+00:00"
+    "updated_at": "2026-10-19T18:58:02.162409+00:00",
+    "media_id": "18125443612687509"
   }
 }
