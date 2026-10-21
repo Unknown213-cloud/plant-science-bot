@@ -26,5 +26,19 @@
     "slide_count": 5,
     "posted_at": "2026-10-19T18:58:03.316354+00:00",
     "media_id": "18125443612687509"
+  },
+  "03-human-brain": {
+    "caption": "Weighing just 3 pounds, your brain houses 86 billion neurons and 100 trillion synaptic connections.\n\nInside the human brain:\n1. Myelinated axons conduct bioelectric pulses at 120 m/s via saltatory conduction.\n2. Vesicles release neurotransmitters, which cross synaptic clefts and bind to receptors.\n3. The blood-brain barrier shields 400 miles of capillaries, protecting neural circuits.\n\nDid you know your brain generates enough electrical power while awake to illuminate a low-wattage LED?\n\n#neuroscience #brainfacts #neuroanatomy #psychology #biology\n\nAI illustration",
+    "type": "carousel",
+    "slides": [
+      "slide_01.jpg",
+      "slide_02.jpg",
+      "slide_03.jpg",
+      "slide_04.jpg",
+      "slide_05.jpg"
+    ],
+    "slide_count": 5,
+    "posted_at": "2026-10-21T17:51:39.337079+00:00",
+    "media_id": "18105458129459086"
   }
 }
