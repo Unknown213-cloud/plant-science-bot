@@ -19,5 +19,11 @@
     "fingerprint": "b1d5c403d01b1dcbafc4d22335af4f86f0a9c4180018d0d7ce402e99369001db",
     "updated_at": "2026-10-21T17:51:38.202066+00:00",
     "media_id": "18105458129459086"
+  },
+  "04-human-lungs": {
+    "status": "publishing",
+    "creation_id": "18021077825945433",
+    "fingerprint": "5dbcfcb8aa3b0bb3f324838ee5f3f08966f33b444a242d5bff0757b0626a6468",
+    "updated_at": "2026-10-23T17:41:14.133679+00:00"
   }
 }
