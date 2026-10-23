@@ -40,5 +40,19 @@
     "slide_count": 5,
     "posted_at": "2026-10-21T17:51:39.337079+00:00",
     "media_id": "18105458129459086"
+  },
+  "04-human-lungs": {
+    "caption": "Right now, 300 million microscopic bubbles in your chest are trading vital gases across a barrier thinner than a cell.\n\nInside your lungs:\n1. Hundreds of millions of alveoli create a large, folded surface for gas exchange.\n2. Oxygen diffuses across a membrane less than 0.5 micrometers thick in just a fraction of a second.\n3. Specialized pulmonary surfactant prevents delicate air sacs from collapsing as you exhale.\n\nTake a deep breath right now—did you realize your lungs had this much surface area?\n\n#humananatomy #lungs #respiratorysystem #pulmonology #biology\n\nAI illustration",
+    "type": "carousel",
+    "slides": [
+      "slide_01.jpg",
+      "slide_02.jpg",
+      "slide_03.jpg",
+      "slide_04.jpg",
+      "slide_05.jpg"
+    ],
+    "slide_count": 5,
+    "posted_at": "2026-10-23T17:41:22.011710+00:00",
+    "media_id": "18181915255436990"
   }
 }
